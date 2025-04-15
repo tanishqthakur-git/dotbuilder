@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: haxplore-service
+spec:
+  selector:
+    app: haxplore
+  ports:
+    - protocol: TCP
+      port: 80  # The port to expose externally
+      targetPort: 3000  # The internal port your app listens to
+  type: LoadBalancer  # Exposes the app via an external IP (could be NodePort if you're testing locally)
+

@@ -1,0 +1,21 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: haxplore-ingress
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+  labels:
+    app: haxplore
+spec:
+  ingressClassName: nginx  # 👈 This tells Kubernetes to use the NGINX ingress controller
+  rules:
+    - host: a554b882bfa404914849d4b58c5756df-173c7492560f2945.elb.ap-south-1.amazonaws.com  # 👈 Replace with your EC2 public DNS or IP
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: haxplore-service
+                port:
+                  number: 80

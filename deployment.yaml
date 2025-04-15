@@ -1,0 +1,51 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: haxplore-deployment
+  labels:
+    app: haxplore
+spec:
+  replicas: 1  # Initial replica count
+  selector:
+    matchLabels:
+      app: haxplore
+  template:
+    metadata:
+      labels:
+        app: haxplore
+    spec:
+      containers:
+      - name: haxplore
+        image: tanishqthakur/haxplore:latest # Replace with your Docker image
+        ports:
+        - containerPort: 3000
+          # Replace with the actual API URL if needed
+        resources:
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: haxplore-hpa
+  namespace: default  # Specify namespace if necessary
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: haxplore-deployment
+  minReplicas: 2  # Minimum number of replicas
+  maxReplicas: 5  # Maximum number of replicas
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 80  # Scale when CPU usage is more than 80%
+
