@@ -1,0 +1,85 @@
+name: CI/CD for Node.js + Next.js App on EKS
+
+on:
+  push:
+    branches: [main]
+
+env:
+  AWS_REGION: ap-south-1
+  CLUSTER_NAME: dotbuilder
+  DOCKER_IMAGE: tanishqthakur/haxplore
+  IMAGE_TAG: latest
+
+jobs:
+  lint:
+    name:  Code Quality Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+
+      - name: Install Dependencies
+        run: npm install
+
+      - name: Run Linter
+        run: npm run lint
+
+  deploy:
+    name: Build & Deploy
+    needs: lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+
+      - name: Install Dependencies
+        run: npm install
+
+      - name: Build Next.js App
+        run: npm run build
+
+      - name: Docker Login
+        uses: docker/login-action@v2
+        with:
+          username: ${{ tanishqthakur-git }}
+          password: ${{ thakur8445@# }}
+
+      - name: Build & Push Docker Image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./dockerfile
+          push: true
+          tags: ${{tanishqthakur-git }}/dotbuilder:${{ github.run_id }}
+
+  update-helm:
+    name: Update Helm Chart
+    runs-on: ubuntu-latest
+    needs: deploy
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.TOKEN }}
+
+      - name: Update tag in Helm values.yaml
+        run: |
+          sed -i "s/tag: .*/tag: \"${{ github.run_id }}\"/" helm/haxplore-chart/values.yaml
+
+      - name: Commit and Push Changes
+        run: |
+          git config --global user.email "tanishqthakur8445@gmail.com"
+          git config --global user.name "tanishqthakur-git"
+          git add helm/haxplore-chart/values.yaml
+          git commit -m "update tag in helm chart"
+          git push
